@@ -1,31 +1,95 @@
 # Word Histogram
 
-This is a C# console application that manages a word histogram. The application provides several functionalities including displaying the histogram, searching for a word, saving the histogram to a file, loading the histogram from a file, and removing a word from the histogram.
+[![CI](https://github.com/enonymous1/cs-word-histogram/actions/workflows/ci.yml/badge.svg)](https://github.com/enonymous1/cs-word-histogram/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4)
 
-## Class: Histogram
+You have a pile of text. This tells you which words show up, and how often.
 
-The `Histogram` class is the main class of the application. It contains the `Main` method which is the entry point of the application.
+Word Histogram is a small C# console app that counts words in text and
+shows the result as a bar chart. Run it interactively for the menu, or
+point it at a file from the command line and get the counts out.
 
-### Methods
+## Quick start
 
-- `Main(string[] args)`: This is the entry point of the application. It displays a menu to the user and handles the user's choice until they choose to exit.
+Prerequisite: the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 
-- `GenerateWordCount(string wordSearch)`: This method generates a word count dictionary from a given string.
+```sh
+# Interactive menu over the sample lyrics
+dotnet run --project src/WordHistogram
 
-- `ShowHistogram(Dictionary<string, int> wordCount)`: This method displays the histogram.
+# Count a file, most frequent first
+dotnet run --project src/WordHistogram -- --file sample-lyrics.txt --top 10
 
-- `SearchForWord(Dictionary<string, int> wordCount)`: This method searches for a word in the word count dictionary.
+# Count from stdin, as JSON
+cat sample-lyrics.txt | dotnet run --project src/WordHistogram -- --stdin --format json
 
-- `SaveHistogram(Dictionary<string, int> wordCount)`: This method saves the histogram to a file.
+# Count and save the histogram for later
+dotnet run --project src/WordHistogram -- --file sample-lyrics.txt --save my-counts
+```
 
-- `LoadHistogram()`: This method loads the histogram from a file.
+The interactive menu (the original 2024 interface, kept intact) offers:
+show histogram, search for a word, save, load, remove a word, exit.
+Saved histograms are JSON files, so a saved count can be loaded back
+in a later session.
 
-- `RemoveWord(Dictionary<string, int> wordCount)`: This method removes a word from the word count dictionary.
+## Sample output
 
-## Usage
+Real output from `dotnet run --project src/WordHistogram -- --file sample-lyrics.txt --top 10`:
 
-To run the application, simply compile and run the `Histogram.cs` file. The application will display a menu with several options. Choose an option by entering the corresponding number.
+```text
+We: 23
+a: 16
+you: 14
+and: 11
+Christmas: 10
+merry: 10
+wish: 10
+bring: 9
+figgy: 6
+happy: 6
+```
 
-## Contributing
+## How counting works
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+- Words are runs of letters or digits. Punctuation and whitespace
+  separate words, except an apostrophe *inside* a word is kept, so
+  "won't" counts as one word, not "won" and "t".
+- Counting is case-insensitive: "We", "we", and "WE" are one entry.
+- In batch mode, `--top N` shows the N most frequent words, ordered
+  by count descending, then word ascending.
+
+## Project layout
+
+```text
+src/WordHistogram.Core/    Counting, the histogram model, JSON save/load
+src/WordHistogram/         Console UI + argument parsing only
+tests/WordHistogram.Tests/ xUnit tests for the core
+sample-lyrics.txt          Demo text (the original Christmas lyrics)
+```
+
+Keeping the console out of the core is the whole point of the split:
+everything about counting can be tested without ever touching a
+terminal, and the batch mode reuses the exact same code as the menu.
+
+## Tests
+
+```sh
+dotnet test WordHistogram.sln
+```
+
+## Non-goals
+
+- Not a text-analysis suite: no stemming, stop-word removal, or
+  n-grams. It counts words, faithfully.
+- Not a file manager: save/load work on one histogram JSON file at
+  a time, in the current directory unless you give a path.
+
+## History
+
+Originally written in February 2024 as a single-file C# console app.
+The October 2026 modernization (see [CHANGELOG.md](CHANGELOG.md))
+moved it to .NET 10, split the core from the UI, added batch mode and
+tests, dropped the Newtonsoft.Json dependency for built-in
+`System.Text.Json`, and fixed the remove/load/tokenizer bugs the
+original had. The menu and the sample lyrics are unchanged on purpose.
