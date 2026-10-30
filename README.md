@@ -15,11 +15,15 @@ point it at a file from the command line and get the counts out.
 Prerequisite: the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 
 ```sh
-# Interactive menu over the sample lyrics
+# Interactive menu over a sample text (lyrics by default,
+# or the "I Have a Dream" excerpt with option 2)
 dotnet run --project src/WordHistogram
 
 # Count a file, most frequent first
 dotnet run --project src/WordHistogram -- --file sample-lyrics.txt --top 10
+
+# Count the folded-in 2021 PG2 lab sample
+dotnet run --project src/WordHistogram -- --file sample-mlk.txt --top 10
 
 # Count from stdin, as JSON
 cat sample-lyrics.txt | dotnet run --project src/WordHistogram -- --stdin --format json
@@ -30,6 +34,8 @@ dotnet run --project src/WordHistogram -- --file sample-lyrics.txt --save my-cou
 
 The interactive menu (the original 2024 interface, kept intact) offers:
 show histogram, search for a word, save, load, remove a word, exit.
+It first asks which sample text to use: the lyrics (default) or the
+"I Have a Dream" excerpt folded in from the 2021 PG2 lab (see History).
 Saved histograms are JSON files, so a saved count can be loaded back
 in a later session.
 
@@ -50,6 +56,22 @@ figgy: 6
 happy: 6
 ```
 
+Real output from `dotnet run --project src/WordHistogram -- --file sample-mlk.txt --top 10`
+(612 words, 216 unique, counted with the modern tokenizer):
+
+```text
+of: 34
+the: 30
+and: 21
+be: 19
+to: 18
+a: 16
+will: 16
+freedom: 13
+from: 12
+I: 12
+```
+
 ## How counting works
 
 - Words are runs of letters or digits. Punctuation and whitespace
@@ -66,6 +88,7 @@ src/WordHistogram.Core/    Counting, the histogram model, JSON save/load
 src/WordHistogram/         Console UI + argument parsing only
 tests/WordHistogram.Tests/ xUnit tests for the core
 sample-lyrics.txt          Demo text (the original Christmas lyrics)
+sample-mlk.txt             Demo text (the 2021 PG2 lab's speech excerpt)
 ```
 
 Keeping the console out of the core is the whole point of the split:
@@ -93,3 +116,15 @@ moved it to .NET 10, split the core from the UI, added batch mode and
 tests, dropped the Newtonsoft.Json dependency for built-in
 `System.Text.Json`, and fixed the remove/load/tokenizer bugs the
 original had. The menu and the sample lyrics are unchanged on purpose.
+
+There is also an earlier predecessor: the August 2021 PG2 Lab 1
+histogram, a .NET Framework 4.7.2 console app with the same 6-option
+menu over an excerpt of Martin Luther King Jr.'s "I Have a Dream"
+speech. It is not published as a separate repo — its save, load, and
+remove options were print-only stubs, and its tokenizer, bar display,
+and menu are all already covered, fixed, by this codebase. What was
+folded in on 2026-10-30, as content only (none of that lab's git
+history was imported, so its personal-email authorship does not come
+with it), is the speech excerpt itself, as `sample-mlk.txt` and the
+interactive menu's second sample choice, plus a test locking in the
+tokenizer behaviour its punctuation needs.

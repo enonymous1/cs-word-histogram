@@ -12,7 +12,7 @@ internal static class Program
 {
     private const string Usage = """
         Usage:
-          word-histogram                                Interactive menu over the sample lyrics
+          word-histogram                                Interactive menu over a sample text
           word-histogram --file <path> [--top N] [--save <path>] [--format text|json]
           word-histogram --text "<text>" [--top N] [--save <path>] [--format text|json]
           word-histogram --stdin [--top N] [--save <path>] [--format text|json]
@@ -120,7 +120,7 @@ internal static class Program
     private static void RunInteractive()
     {
         var histogram = new Histogram();
-        histogram.AddText(SampleLyrics.Text);
+        histogram.AddText(ChooseInteractiveSample());
 
         string[] menu =
         {
@@ -168,6 +168,23 @@ internal static class Program
                     break;
             }
         }
+    }
+
+    /// <summary>
+    /// Lets the interactive menu run over either sample text. The 2024
+    /// lyrics stay the default; option 2 is the "I Have a Dream" excerpt
+    /// folded in from the 2021 PG2 Lab 1 histogram. A blank line, an
+    /// unknown choice, or closed input all fall back to the lyrics, so
+    /// scripts piping input still get the original behaviour.
+    /// </summary>
+    private static string ChooseInteractiveSample()
+    {
+        Console.WriteLine("Sample text:");
+        Console.WriteLine("1. Lyrics (default)");
+        Console.WriteLine("2. \"I Have a Dream\" excerpt (2021 PG2 lab sample)");
+        Console.Write("Please input your selection (1 or 2, Enter for 1): ");
+        string? line = Console.ReadLine();
+        return line?.Trim() == "2" ? SampleSpeech.Text : SampleLyrics.Text;
     }
 
     private static void ShowHistogram(Histogram histogram)

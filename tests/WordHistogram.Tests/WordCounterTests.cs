@@ -34,6 +34,27 @@ public class WordCounterTests
     }
 
     [Fact]
+    public void Count_Pg2SpeechSample_HandlesItsPunctuation()
+    {
+        // The 2021 PG2 lab's sample text exercises punctuation its own
+        // tokenizer mishandled: semicolons, exclamation marks, and an
+        // apostrophe in "God's". The modern tokenizer must keep "God's"
+        // whole, split on ';' and '!', and count case-insensitively.
+        Dictionary<string, int> counts = WordCounter.Count(
+            "all of God's children, black men and white men, Jews and " +
+            "Gentiles, Protestants and Catholics, will be able to join " +
+            "hands and sing in the words of the old Negro spiritual, " +
+            "Free at last! free at last! thank God Almighty, we are " +
+            "free at last!");
+
+        Assert.Equal(1, counts["God's"]);
+        Assert.Equal(1, counts["God"]);
+        Assert.Equal(3, counts["free"]);
+        Assert.Equal(3, counts["last"]);
+        Assert.Equal(3, counts["at"]);
+    }
+
+    [Fact]
     public void Tokenize_SplitsOnHyphens()
     {
         IReadOnlyList<string> words = WordCounter.Tokenize("well-known fact");

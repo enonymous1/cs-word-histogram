@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-10-30 — PG2 Lab 1 fold-in (content only, no history import)
+
+The August 2021 PG2 Lab 1 histogram is folded into this repo instead
+of being published as a second histogram repo. Its code needed nothing
+this codebase did not already have: the same 6-option menu, with save,
+load, and remove already implemented here (they were print-only stubs
+there), and its tokenizer and fixed-column bar display already fixed
+here. So only its distinctive content comes across:
+
+- **Second sample text:** the "I Have a Dream" excerpt the lab used,
+  as `sample-mlk.txt` for `--file` runs and as `SampleSpeech` for the
+  interactive menu, which now asks at startup whether to use the
+  lyrics (default) or the speech excerpt. 612 words, 216 unique, with
+  the modern tokenizer (so "God's" stays one word, unlike the lab's
+  split on apostrophes).
+- **Test:** a word-count test on a PG2 speech passage, locking in
+  semicolon/exclamation splitting, the kept internal apostrophe, and
+  case-insensitive counting.
+- **Docs:** README quick start, sample output, layout, and History
+  updated for the second sample.
+
+Deliberately *not* imported: the PG2 lab's git history, which carries
+a personal Gmail author. The original PG2 zip is left untouched and
+is not pushed.
+
 ## 2026-10-26 — Modernization (on top of the 2024 history)
 
 The original was a single 440-line `Histogram.cs` on .NET 8.0 with no tests,
