@@ -3,10 +3,26 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <AssemblyName>word-histogram</AssemblyName>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\WordHistogram.Core\WordHistogram.Core.csproj" />
+  </ItemGroup>
+
+  <!-- The sample texts live once, as repo-root .txt files, and are
+       embedded here so the interactive menu and batch file runs
+       count the same text. LogicalName pins the manifest resource
+       name: without it, the parent-directory path would change it. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\sample-lyrics.txt" LogicalName="WordHistogram.sample-lyrics.txt" />
+    <EmbeddedResource Include="..\..\sample-mlk.txt" LogicalName="WordHistogram.sample-mlk.txt" />
+  </ItemGroup>
+
+  <!-- Lets the test project call the internal ArgumentParser and
+       SampleTexts. No public API is added for testing. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="WordHistogram.Tests" />
   </ItemGroup>
 
 </Project>

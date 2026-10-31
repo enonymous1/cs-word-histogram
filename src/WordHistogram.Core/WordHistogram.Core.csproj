@@ -1,3 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Not packable on purpose: there is no NuGet release yet, and
+       packing now would ship a bare 1.0.0 package with no
+       description, authors, or license metadata. Revisit only
+       with real package metadata and a release workflow. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
 </Project>

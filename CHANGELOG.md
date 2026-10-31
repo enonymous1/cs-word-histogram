@@ -1,5 +1,72 @@
 # Changelog
 
+## 2026-10-31 — Staff review, Phase 2 (structural)
+
+- **Argument parsing extracted and tested.** `Program.cs`
+  no longer parses arguments: a new internal
+  `ArgumentParser` returns a `ParseResult`
+  (`Interactive` / `Batch` / `Help` / `Error`) instead of
+  the old null-vs-empty-`Options` sentinel, whose
+  no-args comment was wrong and whose interactive-vs-batch
+  distinction depended on an unwritten validation
+  invariant. The parser does no console I/O itself, so it
+  is unit-tested (10 new tests) via
+  `InternalsVisibleTo`; the test project now also
+  references the console project for that purpose.
+  Behaviour changes, all intentional: duplicate flags
+  (`--file` twice, `--top` twice, and so on) now error
+  instead of silently taking the last value, and a bare
+  `--format text` with no input now errors like any other
+  batch-only flag without an input source (it previously
+  slipped through and started an interactive session,
+  ignoring the flag). Exit codes are now documented in
+  `--help` output: 0 success/help, 1 input/save failure,
+  2 argument error.
+- **Saves are atomic.** `HistogramStore.Save` writes to a
+  temp file next to the destination and renames it over
+  the destination, so a kill mid-write cannot leave a
+  truncated histogram in place of the previous good one.
+  Temp files are cleaned up in a `finally`, and a
+  save-failure message now names the destination, not
+  the temp file. A test asserts no `.tmp` files remain
+  after an overwrite.
+- **Sample texts have one source of truth.**
+  `SampleLyrics.cs` and `SampleSpeech.cs` are deleted;
+  the interactive menu now loads `sample-lyrics.txt`
+  and `sample-mlk.txt` as embedded resources
+  (`SampleTexts`). Batch and interactive runs therefore
+  cannot drift apart. Tests assert both embedded texts
+  load and contain their expected phrases.
+- **Packability decided, not accidental.** Core and
+  console both set `IsPackable=false` until a NuGet
+  release with real package metadata and a release
+  workflow is intentional; packing today would have
+  shipped a bare 1.0.0 package.
+- **SDK pinned.** A new `global.json` pins the SDK to
+  the 10.0.400 feature band with `latestFeature`
+  roll-forward (so 10.0.403 and later 10.0.x feature
+  bands work; `latestPatch` from 10.0.100 would not have
+  rolled across feature bands, which was caught while
+  verifying this change). No assembly or package version
+  is adopted yet — that decision is deferred to the
+  first release tag, and the README claims no version.
+- **Gitignore correction found in verification:**
+  the Phase 1 root-only `/*.json` rule also ignored
+  `global.json`, so an exception for it was added in
+  this phase. Root saves are still ignored; subdirectory
+  JSON files are not.
+- **Tests:** 34 tests total (was 21 after Phase 1):
+  10 parser tests, 2 sample-text tests, 1 atomic-save
+  test, plus the Phase 1 additions. The xUnit runner
+  itself still cannot run on this box (testhost
+  connection timeout, as before), so CI remains the
+  xUnit gate; parser behaviour was instead verified
+  end-to-end through the built binary (help, unknown,
+  missing value, duplicates, two sources, negative top,
+  batch-only flags without input, MLK/lyrics batch
+  output, curly apostrophe, appended `.json` save name,
+  interactive sample counts, and overflow load).
+
 ## 2026-10-31 — Staff review, Phase 1 (low-risk hardening)
 
 - **Fixed: crafted histogram JSON no longer crashes the loader.**

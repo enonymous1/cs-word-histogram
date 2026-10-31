@@ -24,7 +24,35 @@ public static class HistogramStore
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
 
         string json = JsonSerializer.Serialize(ordered, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(path, json);
+
+        // Write to a temp file next to the destination, then rename:
+        // a kill mid-write must not leave a truncated histogram in
+        // place of the previous good one. The temp file is in the
+        // same directory (not GetTempPath) so the rename stays on
+        // one filesystem and is atomic.
+        string tempPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            try
+            {
+                File.WriteAllText(tempPath, json);
+            }
+            catch (IOException ex)
+            {
+                // Report the destination, not the temp name, so the
+                // caller can tell the user which file failed.
+                throw new IOException($"Could not save histogram to '{path}'.", ex);
+            }
+
+            File.Move(tempPath, path, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
+        }
     }
 
     /// <summary>

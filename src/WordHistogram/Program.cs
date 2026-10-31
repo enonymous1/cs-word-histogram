@@ -6,57 +6,39 @@ namespace WordHistogram;
 /// <summary>
 /// Console front end for <see cref="Histogram"/>. All counting, searching,
 /// removing and file logic lives in WordHistogram.Core; this file only
-/// parses arguments, renders output, and reads user input.
+/// renders output and reads user input. Argument parsing lives in
+/// <see cref="ArgumentParser"/>, which is unit-tested separately.
 /// </summary>
 internal static class Program
 {
-    private const string Usage = """
-        Usage:
-          word-histogram                                Interactive menu over a sample text
-          word-histogram --file <path> [--top N] [--save <path>] [--format text|json]
-          word-histogram --text "<text>" [--top N] [--save <path>] [--format text|json]
-          word-histogram --stdin [--top N] [--save <path>] [--format text|json]
-
-        Options:
-          --file <path>    Count the words in a text file.
-          --text <text>    Count the words in the given text.
-          --stdin          Read text from standard input.
-          --top N          Show only the N most frequent words.
-          --save <path>    Save the histogram as JSON (a .json extension is appended if missing).
-          --format         text (default) or json, for batch output.
-          --help           Show this help.
-        """;
-
-    private sealed class Options
-    {
-        public string? FilePath { get; set; }
-        public string? Text { get; set; }
-        public bool FromStdin { get; set; }
-        public int? Top { get; set; }
-        public string? SavePath { get; set; }
-        public string Format { get; set; } = "text";
-    }
-
     private static int Main(string[] args)
     {
-        if (!TryParseArgs(args, out Options? options))
+        ParseResult result = ArgumentParser.TryParse(args);
+        switch (result.Outcome)
         {
-            return 2;
-        }
+            case ParseOutcome.Help:
+                Console.WriteLine(ArgumentParser.Usage);
+                return 0;
+            case ParseOutcome.Error:
+                if (result.Error is not null)
+                {
+                    Console.Error.WriteLine(result.Error);
+                }
 
-        if (options is null)
-        {
-            // --help: usage already printed.
-            return 0;
-        }
+                if (result.ShowUsage)
+                {
+                    Console.Error.WriteLine(ArgumentParser.Usage);
+                }
 
-        if (options.FilePath is not null || options.Text is not null || options.FromStdin)
-        {
-            return RunBatch(options);
+                return 2;
+            case ParseOutcome.Batch:
+                return RunBatch(result.Options!);
+            case ParseOutcome.Interactive:
+                RunInteractive();
+                return 0;
+            default:
+                return 2;
         }
-
-        RunInteractive();
-        return 0;
     }
 
     // ----- Batch mode -------------------------------------------------------
@@ -184,7 +166,7 @@ internal static class Program
         Console.WriteLine("2. \"I Have a Dream\" excerpt (2021 PG2 lab sample)");
         Console.Write("Please input your selection (1 or 2, Enter for 1): ");
         string? line = Console.ReadLine();
-        return line?.Trim() == "2" ? SampleSpeech.Text : SampleLyrics.Text;
+        return line?.Trim() == "2" ? SampleTexts.Speech : SampleTexts.Lyrics;
     }
 
     private const int MaxBarWidth = 50;
@@ -415,119 +397,5 @@ internal static class Program
         {
             // No console attached; just keep going without clearing.
         }
-    }
-
-    // ----- Argument parsing -------------------------------------------------
-
-    private static bool TryParseArgs(string[] args, out Options? options)
-    {
-        options = null;
-
-        if (args.Length == 0)
-        {
-            // Interactive mode: options stays null, but that is not --help.
-            // Signal interactive mode with a non-null empty Options instead.
-            options = new Options();
-            // Mark interactive by leaving all inputs unset; Main checks that.
-            return true;
-        }
-
-        var parsed = new Options();
-        for (int i = 0; i < args.Length; i++)
-        {
-            switch (args[i])
-            {
-                case "--help":
-                case "-h":
-                    Console.WriteLine(Usage);
-                    options = null;
-                    return true;
-                case "--file":
-                    if (!TakeValue(args, ref i, out string? file))
-                    {
-                        return false;
-                    }
-
-                    parsed.FilePath = file;
-                    break;
-                case "--text":
-                    if (!TakeValue(args, ref i, out string? text))
-                    {
-                        return false;
-                    }
-
-                    parsed.Text = text;
-                    break;
-                case "--stdin":
-                    parsed.FromStdin = true;
-                    break;
-                case "--top":
-                    if (!TakeValue(args, ref i, out string? topText)
-                        || !int.TryParse(topText, out int top)
-                        || top < 0)
-                    {
-                        Console.Error.WriteLine("error: --top needs a non-negative integer.");
-                        return false;
-                    }
-
-                    parsed.Top = top;
-                    break;
-                case "--save":
-                    if (!TakeValue(args, ref i, out string? save))
-                    {
-                        return false;
-                    }
-
-                    parsed.SavePath = save;
-                    break;
-                case "--format":
-                    if (!TakeValue(args, ref i, out string? format)
-                        || (format != "text" && format != "json"))
-                    {
-                        Console.Error.WriteLine("error: --format must be 'text' or 'json'.");
-                        return false;
-                    }
-
-                    parsed.Format = format;
-                    break;
-                default:
-                    Console.Error.WriteLine($"error: unknown argument '{args[i]}'.");
-                    Console.Error.WriteLine(Usage);
-                    return false;
-            }
-        }
-
-        int inputSources = (parsed.FilePath is not null ? 1 : 0)
-            + (parsed.Text is not null ? 1 : 0)
-            + (parsed.FromStdin ? 1 : 0);
-        if (inputSources > 1)
-        {
-            Console.Error.WriteLine("error: use only one of --file, --text, or --stdin.");
-            return false;
-        }
-
-        if (inputSources == 0
-            && (parsed.Top is not null || parsed.SavePath is not null || parsed.Format != "text"))
-        {
-            Console.Error.WriteLine("error: --top, --save, and --format need an input source (--file, --text, or --stdin).");
-            return false;
-        }
-
-        options = parsed;
-        return true;
-    }
-
-    private static bool TakeValue(string[] args, ref int index, out string? value)
-    {
-        value = null;
-        if (index + 1 >= args.Length)
-        {
-            Console.Error.WriteLine($"error: '{args[index]}' needs a value.");
-            Console.Error.WriteLine(Usage);
-            return false;
-        }
-
-        value = args[++index];
-        return true;
     }
 }

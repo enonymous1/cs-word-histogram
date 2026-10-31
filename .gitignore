@@ -30,3 +30,5 @@ Thumbs.db
 # a bare *.json would also ignore a committed fixture or config
 # file in a subdirectory, which is not what this rule is for.
 /*.json
+# Exception: global.json is a committed SDK pin, not a save file.
+!global.json

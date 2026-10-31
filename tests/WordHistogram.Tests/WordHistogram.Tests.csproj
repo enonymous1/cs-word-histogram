@@ -13,6 +13,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\WordHistogram.Core\WordHistogram.Core.csproj" />
+    <!-- For ArgumentParser and SampleTexts tests only; the console
+         exposes its internals to this project via InternalsVisibleTo.
+         Referencing an Exe project is intentional here. -->
+    <ProjectReference Include="..\..\src\WordHistogram\WordHistogram.csproj" />
   </ItemGroup>
 
 </Project>

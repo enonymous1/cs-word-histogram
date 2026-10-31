@@ -39,6 +39,23 @@ public class HistogramStoreTests : IDisposable
     }
 
     [Fact]
+    public void Save_LeavesNoTempFilesAndOverwrites()
+    {
+        string path = Path.Combine(_tempDir, "hist.json");
+        var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["hello"] = 1,
+        };
+
+        HistogramStore.Save(counts, path);
+        counts["hello"] = 2;
+        HistogramStore.Save(counts, path);
+
+        Assert.Equal(2, HistogramStore.Load(path)["hello"]);
+        Assert.Empty(Directory.GetFiles(_tempDir, "*.tmp"));
+    }
+
+    [Fact]
     public void Load_MissingFile_ThrowsFileNotFound()
     {
         Assert.Throws<FileNotFoundException>(() =>

@@ -76,7 +76,8 @@ I: 12
 
 - Words are runs of letters or digits. Punctuation and whitespace
   separate words, except an apostrophe *inside* a word is kept, so
-  "won't" counts as one word, not "won" and "t".
+  "won't" counts as one word, not "won" and "t". The curly
+  apostrophe (’) counts the same way.
 - Counting is case-insensitive: "We", "we", and "WE" are one entry.
 - In batch mode, `--top N` shows the N most frequent words, ordered
   by count descending, then word ascending.
