@@ -102,6 +102,44 @@ terminal, and the batch mode reuses the exact same code as the menu.
 dotnet test WordHistogram.sln
 ```
 
+## Releases
+
+Prebuilt binaries are published from tags, not from branch
+pushes. Pushing to `main` runs CI (build, test, format);
+pushing a tag runs the release workflow
+(`.github/workflows/release.yml`), which runs the full
+test suite first, then publishes self-contained single-file
+binaries for Windows (`win-x64`), Linux (`linux-x64`),
+and macOS (`osx-arm64` and `osx-x64`), one zip per
+platform, attached to a GitHub Release with generated
+notes. No .NET SDK is needed to run a released binary.
+
+To make a release, in order — tag *after* pushing `main`,
+so the workflow file is in the tagged commit:
+
+```sh
+git push origin main
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Tags containing `-` (for example `v1.0.0-rc.1`) are
+marked as prereleases. To download a release, pick the
+zip for your platform from the repository's Releases
+page, unzip it, and run the binary inside
+(`word-histogram.exe` on Windows, `word-histogram`
+elsewhere) — the zip contains only the binary, not the
+repo's sample texts, so point it at your own file, or
+try it with inline text:
+
+```sh
+./word-histogram --text "We wish you a merry Christmas" --top 5
+```
+
+No release exists until the first tag is pushed, and no
+version is bumped in code for a release: the tag name
+is the version.
+
 ## Non-goals
 
 - Not a text-analysis suite: no stemming, stop-word removal, or

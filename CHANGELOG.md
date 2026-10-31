@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased — Tag-triggered release workflow
+
+- **New: `.github/workflows/release.yml`.** Pushing a tag
+  like `v1.0.0` (or a prerelease tag like `v1.0.0-rc.1`)
+  now creates a GitHub Release with prebuilt binaries.
+  The workflow runs the full test suite first — tag
+  pushes do not trigger CI, so a broken tag must not
+  become a release — then publishes self-contained
+  single-file binaries for `win-x64`, `linux-x64`,
+  `osx-arm64`, and `osx-x64`, zips each binary at the
+  zip root, and attaches the four zips to the release
+  with generated notes. Tags containing `-` are marked
+  as prereleases.
+- **No version bump.** The tag name is the version; no
+  assembly or package version was changed in code for
+  this workflow. Tag *after* pushing `main`, so the
+  workflow file is present in the tagged commit.
+- README updated: Installation now mentions the
+  prebuilt release binaries, and a new Releases section
+  documents the tag flow. No release exists yet until
+  the first tag is pushed.
+
 ## 2026-10-31 — Staff review, Phase 2 (structural)
 
 - **Argument parsing extracted and tested.** `Program.cs`

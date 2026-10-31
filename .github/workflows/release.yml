@@ -1,0 +1,101 @@
+name: Release
+
+# Tag-triggered only: pushing a tag like v1.0.0 (or a prerelease
+# tag like v1.0.0-rc.1) creates a GitHub Release with prebuilt
+# binaries. Branch pushes do not run this workflow, and tag
+# pushes do not run CI (CI only listens to main and pull
+# requests), so the test job below runs first on purpose: a
+# broken tag must not become a release.
+#
+# Tag AFTER pushing main, not before: the workflow file must
+# be present in the tagged commit, or nothing will run.
+#   git push origin main
+#   git tag v1.0.0
+#   git push origin v1.0.0
+#
+# No version is bumped anywhere in code for a release: the
+# tag name is the version. Tags containing "-" are marked
+# as prereleases.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  test:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build
+        run: dotnet build WordHistogram.sln --configuration Release
+      - name: Test
+        run: dotnet test WordHistogram.sln --configuration Release --no-build
+      - name: Check formatting
+        run: dotnet format WordHistogram.sln --verify-no-changes
+
+  publish:
+    permissions:
+      contents: read
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      # One runtime per job; do not fail-fast, so a failure in
+      # one runtime does not hide whether the others publish.
+      # The release job only runs if every runtime succeeds.
+      fail-fast: false
+      matrix:
+        rid: [win-x64, linux-x64, osx-arm64, osx-x64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish self-contained single file
+        run: >
+          dotnet publish src/WordHistogram
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          --output publish/${{ matrix.rid }}
+      - name: Zip the binary at the zip root
+        run: |
+          if [ "${{ matrix.rid }}" = "win-x64" ]; then
+            exe="word-histogram.exe"
+          else
+            exe="word-histogram"
+          fi
+          zip -j "word-histogram-${{ github.ref_name }}-${{ matrix.rid }}.zip" "publish/${{ matrix.rid }}/$exe"
+          unzip -l "word-histogram-${{ github.ref_name }}-${{ matrix.rid }}.zip"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: word-histogram-${{ github.ref_name }}-${{ matrix.rid }}
+          path: word-histogram-${{ github.ref_name }}-${{ matrix.rid }}.zip
+          if-no-files-found: error
+
+  release:
+    permissions:
+      contents: write
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all platform zips
+        uses: actions/download-artifact@v4
+        with:
+          pattern: word-histogram-${{ github.ref_name }}-*
+          merge-multiple: true
+          path: .
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: word-histogram-${{ github.ref_name }}-*.zip
