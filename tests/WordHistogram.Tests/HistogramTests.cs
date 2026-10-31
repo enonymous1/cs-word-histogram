@@ -42,6 +42,17 @@ public class HistogramTests
     }
 
     [Fact]
+    public void Top_TiesBreakByWordAscending()
+    {
+        var histogram = new Histogram();
+        histogram.AddText("b a c");
+
+        Assert.Equal(
+            new[] { ("a", 1), ("b", 1), ("c", 1) },
+            histogram.Top(3).Select(pair => (pair.Key, pair.Value)));
+    }
+
+    [Fact]
     public void AddCounts_RejectsNegativeCounts()
     {
         var histogram = new Histogram();

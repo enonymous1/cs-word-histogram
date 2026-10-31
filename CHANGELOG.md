@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-10-31 — Staff review, Phase 1 (low-risk hardening)
+
+- **Fixed: crafted histogram JSON no longer crashes the loader.**
+  `HistogramStore.Load` now adds merged case-variant counts with
+  `checked`, so a file like `{ "We": 2147483647, "we": 1 }`
+  throws `InvalidDataException` (and the interactive menu
+  reports "Could not load histogram") instead of wrapping to
+  a negative count and crashing in `AddCounts`.
+- **Build properties are now really centralised.**
+  `TargetFramework`, `Nullable`, and `ImplicitUsings` were
+  removed from all three `.csproj` files; they live only in
+  `Directory.Build.props`, which previously had no effect on
+  them. `LangVersion` is pinned to 14 (the version shipped
+  with .NET 10) instead of `latest`, so a future SDK cannot
+  change language semantics under `TreatWarningsAsErrors`.
+  Correction to the staff review, which said C# 13: .NET 10
+  ships C# 14.
+- **Interactive histogram rendering** materialises the
+  by-count ordering once instead of sorting twice, with the
+  bar width and label width as named constants.
+- **Save/load file naming** is now one helper, `JsonPath`,
+  used by batch save, interactive save, and interactive
+  load. Behaviour change: a `.json` extension is appended
+  if missing, not replaced — `--save report.txt` now saves
+  `report.txt.json`, not `report.json`. Files saved under
+  the old rule from a dotted name will need renaming to
+  load under the new rule.
+- **Tokenizer** now treats the curly apostrophe (U+2019)
+  like ASCII `'`, so "don’t" pasted from Word or the web
+  stays one word.
+- **Tests:** overflow-load, curly-apostrophe, and
+  `Top` tie-breaking tests added (21 tests total).
+- **Repo hygiene:** `.gitignore` now ignores only root
+  `/*.json` saves, not every JSON file at any depth;
+  CI gains `permissions: contents: read` and a
+  cancel-in-progress concurrency group; Dependabot
+  (weekly, GitHub Actions + NuGet) and a minimal
+  `.editorconfig` added.
+
 ## 2026-10-30 — PG2 Lab 1 fold-in (content only, no history import)
 
 The August 2021 PG2 Lab 1 histogram is folded into this repo instead

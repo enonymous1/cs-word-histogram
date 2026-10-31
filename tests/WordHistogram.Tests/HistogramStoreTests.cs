@@ -73,6 +73,18 @@ public class HistogramStoreTests : IDisposable
     }
 
     [Fact]
+    public void Load_OverflowCount_ThrowsInvalidData()
+    {
+        // Two case variants at int.MaxValue would wrap to a negative
+        // count if added unchecked; Load must reject the file instead
+        // of returning a count AddCounts would then throw on.
+        string path = Path.Combine(_tempDir, "overflow.json");
+        File.WriteAllText(path, """{ "We": 2147483647, "we": 1 }""");
+
+        Assert.Throws<InvalidDataException>(() => HistogramStore.Load(path));
+    }
+
+    [Fact]
     public void Load_CaseVariants_AreMerged()
     {
         // A hand-written file may hold both "We" and "we"; they are one word.

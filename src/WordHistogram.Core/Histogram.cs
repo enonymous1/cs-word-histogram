@@ -66,7 +66,12 @@ public sealed class Histogram
 
     public void Clear() => _counts.Clear();
 
-    /// <summary>Entries ordered by count descending, then word ascending.</summary>
+    /// <summary>
+    /// Entries ordered by count descending, then word ascending
+    /// (case-insensitive). The tie-break makes output deterministic
+    /// across runs and diffable; both the bar chart and --top depend
+    /// on this ordering, not just on the counts.
+    /// </summary>
     public IEnumerable<KeyValuePair<string, int>> ByCountDescending() =>
         _counts
             .OrderByDescending(pair => pair.Value)

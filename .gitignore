@@ -26,5 +26,7 @@ TestResults/
 .DS_Store
 Thumbs.db
 
-# Local histogram saves created while trying the app
-*.json
+# Local histogram saves created while trying the app. Root-only:
+# a bare *.json would also ignore a committed fixture or config
+# file in a subdirectory, which is not what this rule is for.
+/*.json

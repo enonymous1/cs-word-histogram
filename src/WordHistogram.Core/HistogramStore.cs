@@ -66,12 +66,26 @@ public static class HistogramStore
         }
 
         // Merge case variants ("We" and "we") instead of letting one win.
+        // The addition is checked: without it, two large case variants
+        // would wrap to a negative count, which AddCounts would then
+        // reject with an exception the caller does not expect from Load.
         var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (KeyValuePair<string, int> pair in data)
         {
-            result[pair.Key] = result.TryGetValue(pair.Key, out int existing)
-                ? existing + pair.Value
-                : pair.Value;
+            int merged;
+            try
+            {
+                merged = result.TryGetValue(pair.Key, out int existing)
+                    ? checked(existing + pair.Value)
+                    : pair.Value;
+            }
+            catch (OverflowException ex)
+            {
+                throw new InvalidDataException(
+                    $"File '{path}' contains a word count too large to load.", ex);
+            }
+
+            result[pair.Key] = merged;
         }
 
         return result;

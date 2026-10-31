@@ -3,7 +3,12 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>latest</LangVersion>
+    <!-- Pinned, not "latest": the next SDK must not change language
+         semantics (and, with TreatWarningsAsErrors, break the build)
+         for reasons unrelated to this code. C# 14 is the language
+         version shipped with .NET 10; bump this deliberately with
+         the SDK. -->
+    <LangVersion>14</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- NU1900 is the NuGet vulnerability-audit warning, which fires when
          audit data cannot be fetched (e.g. offline). That must not fail

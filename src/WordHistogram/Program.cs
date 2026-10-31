@@ -22,7 +22,7 @@ internal static class Program
           --text <text>    Count the words in the given text.
           --stdin          Read text from standard input.
           --top N          Show only the N most frequent words.
-          --save <path>    Save the histogram as JSON (extension forced to .json).
+          --save <path>    Save the histogram as JSON (a .json extension is appended if missing).
           --format         text (default) or json, for batch output.
           --help           Show this help.
         """;
@@ -81,7 +81,7 @@ internal static class Program
 
         if (options.SavePath is not null)
         {
-            string savePath = Path.ChangeExtension(options.SavePath, ".json");
+            string savePath = JsonPath(options.SavePath);
             try
             {
                 HistogramStore.Save(histogram.Counts, savePath);
@@ -187,34 +187,55 @@ internal static class Program
         return line?.Trim() == "2" ? SampleSpeech.Text : SampleLyrics.Text;
     }
 
+    private const int MaxBarWidth = 50;
+    private const int LabelWidth = 24;
+
+    /// <summary>
+    /// Returns <paramref name="name"/> with a .json extension, appending
+    /// it when the name has a different extension instead of replacing
+    /// it, so "report.txt" becomes "report.txt.json", not "report.json".
+    /// Used by batch save, interactive save, and interactive load alike,
+    /// so a name saved in one place loads in the other.
+    /// </summary>
+    private static string JsonPath(string name) =>
+        Path.GetExtension(name).Equals(".json", StringComparison.OrdinalIgnoreCase)
+            ? name
+            : name + ".json";
+
     private static void ShowHistogram(Histogram histogram)
     {
         Console.WriteLine("\nOption 1: Show Histogram\n");
 
-        if (histogram.UniqueWords == 0)
+        // Materialise once: ByCountDescending sorts the whole dictionary,
+        // so enumerating it twice (once for the max, once for the bars)
+        // would sort twice.
+        List<KeyValuePair<string, int>> entries = histogram.ByCountDescending().ToList();
+
+        if (entries.Count == 0)
         {
             Console.WriteLine("\t(empty histogram)");
         }
         else if (Console.IsOutputRedirected)
         {
             // No cursor tricks or colours when output is piped to a file.
-            foreach (KeyValuePair<string, int> entry in histogram.ByCountDescending())
+            foreach (KeyValuePair<string, int> entry in entries)
             {
                 Console.WriteLine($"\t{entry.Key}: {entry.Value}");
             }
         }
         else
         {
-            const int maxBarWidth = 50;
-            int maxCount = histogram.ByCountDescending().First().Value;
+            int maxCount = entries[0].Value;
 
-            foreach (KeyValuePair<string, int> entry in histogram.ByCountDescending())
+            foreach (KeyValuePair<string, int> entry in entries)
             {
+                // Scale so the largest bar fills MaxBarWidth; Math.Max(1, …)
+                // keeps a count of 1 visible instead of rendering nothing.
                 int barLength = entry.Value == maxCount
-                    ? maxBarWidth
-                    : Math.Max(1, entry.Value * maxBarWidth / maxCount);
+                    ? MaxBarWidth
+                    : Math.Max(1, entry.Value * MaxBarWidth / maxCount);
 
-                Console.Write("\t" + entry.Key.PadRight(24));
+                Console.Write("\t" + entry.Key.PadRight(LabelWidth));
 
                 ConsoleColor savedBackground = Console.BackgroundColor;
                 try
@@ -261,7 +282,7 @@ internal static class Program
             return;
         }
 
-        saveName = Path.ChangeExtension(saveName, ".json");
+        saveName = JsonPath(saveName);
         try
         {
             HistogramStore.Save(histogram.Counts, saveName);
@@ -286,7 +307,7 @@ internal static class Program
             return;
         }
 
-        loadName = Path.ChangeExtension(loadName, ".json");
+        loadName = JsonPath(loadName);
 
         Dictionary<string, int> loaded;
         try

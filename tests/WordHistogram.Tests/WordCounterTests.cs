@@ -55,6 +55,16 @@ public class WordCounterTests
     }
 
     [Fact]
+    public void Tokenize_KeepsCurlyApostropheWhole()
+    {
+        // Text pasted from Word or the web uses U+2019, not ASCII '.
+        // It must count the same way, or "don’t" splits into don + t.
+        IReadOnlyList<string> words = WordCounter.Tokenize("don’t go");
+
+        Assert.Equal(new[] { "don’t", "go" }, words);
+    }
+
+    [Fact]
     public void Tokenize_SplitsOnHyphens()
     {
         IReadOnlyList<string> words = WordCounter.Tokenize("well-known fact");

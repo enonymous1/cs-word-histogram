@@ -8,8 +8,9 @@ public static class WordCounter
     /// <summary>
     /// Splits <paramref name="text"/> into words. A word is a run of letters
     /// or digits; an apostrophe inside a word is kept, so "won't" stays one
-    /// word instead of splitting into "won" and "t". All other punctuation
-    /// and whitespace separates words.
+    /// word instead of splitting into "won" and "t". The curly apostrophe
+    /// (U+2019) counts the same way. All other punctuation and whitespace
+    /// separates words.
     /// </summary>
     public static IReadOnlyList<string> Tokenize(string text)
     {
@@ -26,12 +27,13 @@ public static class WordCounter
             {
                 current.Append(c);
             }
-            else if (c == '\''
+            else if ((c == '\'' || c == '\u2019')
                 && current.Length > 0
                 && i + 1 < text.Length
                 && char.IsLetter(text[i + 1]))
             {
-                // Internal apostrophe: don't, won't, it's.
+                // Internal apostrophe, ASCII or curly (U+2019, as pasted
+                // from Word or the web): don't, won't, it's, don’t.
                 current.Append(c);
             }
             else if (current.Length > 0)
