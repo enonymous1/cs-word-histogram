@@ -74,7 +74,7 @@ jobs:
           zip -j "word-histogram-${{ github.ref_name }}-${{ matrix.rid }}.zip" "publish/${{ matrix.rid }}/$exe"
           unzip -l "word-histogram-${{ github.ref_name }}-${{ matrix.rid }}.zip"
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: word-histogram-${{ github.ref_name }}-${{ matrix.rid }}
           path: word-histogram-${{ github.ref_name }}-${{ matrix.rid }}.zip
