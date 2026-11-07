@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all platform zips
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: word-histogram-${{ github.ref_name }}-*
           merge-multiple: true
